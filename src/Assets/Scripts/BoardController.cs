@@ -51,7 +51,7 @@ public class BoardController : MonoBehaviour
     }
 
     // Start is called before the first frame update
-   Å@public void Start()
+    public void Start()
     {
         ClearAll();
         /*for (int y = 0; y < BOARD_HEIGHT; y++)
