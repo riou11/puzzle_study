@@ -36,7 +36,7 @@ public class BoardController : MonoBehaviour
         return 0 == _board[pos.y, pos.x];
     }
 
-    public bool settle(Vector2Int pos, int val)
+    public bool Settle(Vector2Int pos, int val)
     {
         if (!CanSettle(pos)) return false;
 
