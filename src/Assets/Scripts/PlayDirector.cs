@@ -12,6 +12,7 @@ interface IState
         GameOver = 1,
         Falling = 2,
         Erasing = 3,
+        Waiting = 4,
 
         MAX,
 
@@ -36,12 +37,17 @@ public class PlayDirector : MonoBehaviour
     [SerializeField] TextMeshProUGUI textScore = default!;
     uint _score = 0;
     int _chainCount = -1;
+
+    bool _canSpawn = false;
+
     IState.E_State _current_state = IState.E_State.Falling;
-    static readonly IState[] states = new IState[(int)IState.E_State.MAX]{
+    static readonly IState[] states = new IState[(int)IState.E_State.MAX]
+    {
         new ControlState(),
         new GameOverState(),
         new FallingState(),
         new ErasingState(),
+        new WaitingState(),
     };
 
     void Start()
@@ -52,6 +58,7 @@ public class PlayDirector : MonoBehaviour
         _playerController.SetLogicalInput(_logicalInput);
 
         _nextQueue.Initialize();
+        UpdateNextsView();
         InitializeState();
 
         SetScore(0);
@@ -59,18 +66,19 @@ public class PlayDirector : MonoBehaviour
 
     void UpdateNextsView()
     {
-        _nextQueue.Each((int idx, Vector2Int n) => {
+        _nextQueue.Each((int idx, Vector2Int n) =>
+        {
             nextPuyoPairs[idx++].SetPuyoType((PuyoType)n.x, (PuyoType)n.y);
         });
     }
 
     static readonly KeyCode[] key_code_tbl = new KeyCode[(int)LogicalInput.Key.MAX]{
-        KeyCode.RightArrow, 
-        KeyCode.LeftArrow,  
-        KeyCode.X,          
-        KeyCode.Z,          
-        KeyCode.UpArrow,    
-        KeyCode.DownArrow,  
+        KeyCode.RightArrow,
+        KeyCode.LeftArrow,
+        KeyCode.X,
+        KeyCode.Z,
+        KeyCode.UpArrow,
+        KeyCode.DownArrow,
     };
 
     void UpdateInput()
@@ -87,6 +95,16 @@ public class PlayDirector : MonoBehaviour
 
         _logicalInput.Update(inputDev);
     }
+
+    class WaitingState : IState
+    {
+        public IState.E_State Initialize(PlayDirector parent) { return IState.E_State.Unchanged; }
+        public IState.E_State Update(PlayDirector parent)
+        {
+            return parent._canSpawn ? IState.E_State.Control : IState.E_State.Unchanged;
+        }
+    }
+
 
     class ControlState : IState
     {
@@ -137,7 +155,7 @@ public class PlayDirector : MonoBehaviour
                 return IState.E_State.Unchanged;
             }
             parent._chainCount = 0;
-            return IState.E_State.Control;
+            return parent._canSpawn ? IState.E_State.Control : IState.E_State.Waiting;
         }
         public IState.E_State Update(PlayDirector parent)
         {
@@ -190,5 +208,14 @@ public class PlayDirector : MonoBehaviour
     void AddScore(uint score)
     {
         if (0 < score) SetScore(_score + score);
+    }
+
+    public void EnableSpawn(bool enable)
+    {
+        _canSpawn = enable;
+    }
+    public bool IsGameOver()
+    {
+        return _current_state == IState.E_State.GameOver;
     }
 }
